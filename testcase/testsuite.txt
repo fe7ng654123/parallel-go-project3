@@ -1,0 +1,13 @@
+20     5 0.75 8 4 ./testcase/0_result.txt
+102400 4 0.25 0 1 ./testcase/1_result.txt 
+512000 3 0.15 1 2 ./testcase/2_result.txt 
+102400 5 0.25 2 3 ./testcase/3_result.txt 
+512000 4 0.15 3 4 ./testcase/4_result.txt 
+512000 4 0.15 4 1 ./testcase/5_result.txt 
+1024000 3 0.20 5 2 ./testcase/6_result.txt 
+512000  5 0.25 6 3 ./testcase/7_result.txt 
+1024000 4 0.25 7 4 ./testcase/8_result.txt 
+512000 4 0.25  8 4 ./testcase/9_result.txt 
+1024000 5 0.25 9 4 ./testcase/10_result.txt 
+1024000 4 0.15 10 4 ./testcase/11_result.txt
+512000 5 0.15 11 4 ./testcase/12_result.txt
