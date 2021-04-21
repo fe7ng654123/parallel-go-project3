@@ -142,6 +142,7 @@ int main(int agrc, char* argv[]) {
     // printf("counts[%d] = %d\n",i,counts[i]); 
     gathered_num += counts[i];
   }
+  if(world_rank ==0) printf("gathered_num = %d\n",gathered_num);
   // gathered_ids = malloc(gathered_num*sizeof(int));
   
   gathered_p_pts = malloc(gathered_num*sizeof(Point_Max));
@@ -152,7 +153,6 @@ int main(int agrc, char* argv[]) {
 
   for (int i = 0; i < permissiblePointNum; i++)
   {
-    printf("gathered_num = %d\n",gathered_num);
     p_result[i].ID=pPermissiblePoints[i].ID;
     for (int j = 0; j < dim; j++)
     {
