@@ -17,7 +17,6 @@ typedef struct point_max_dim
   float values[5];
 } Point_Max;
 
-
 int main(int agrc, char *argv[])
 {
   if (agrc != 5)
@@ -86,8 +85,8 @@ int main(int agrc, char *argv[])
   int split_size = limit;
 
   int block_size = 250;
-  if (split_size <= 250)
-    block_size = split_size;
+  // if (split_size <= 250)
+  //   block_size = split_size;
 
   // printf("split_size = %d\n",split_size);
 
@@ -103,77 +102,85 @@ int main(int agrc, char *argv[])
   int round_size = 0;
 
   int token = numPt;
-  offset =0;
-  while(token > 0)
+  offset = 0;
+  // while(token > 0)
+  // {
+  // if (i == 0)
+  // {
+  //   offset = 0;
+  //   round_size = (numPt + 1) / 3;
+  //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //first round
+  // }
+  // else if (i == 1)
+  // {
+  //   offset = (numPt + 1) / 3;
+  //   round_size = (numPt + 1) / 3;
+  //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //second round
+  // }
+  // else if (i == 2)
+  // {
+  //   offset = (numPt + 1) / 3 * 2;
+  //   round_size = numPt - ((numPt + 1) / 3 * 2);
+  //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //third round
+  // }
+
+  for (int i = 0; i < split_size; i += block_size)
   {
-    // if (i == 0)
-    // {
-    //   offset = 0;
-    //   round_size = (numPt + 1) / 3;
-    //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //first round
-    // }
-    // else if (i == 1)
-    // {
-    //   offset = (numPt + 1) / 3;
-    //   round_size = (numPt + 1) / 3;
-    //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //second round
-    // }
-    // else if (i == 2)
-    // {
-    //   offset = (numPt + 1) / 3 * 2;
-    //   round_size = numPt - ((numPt + 1) / 3 * 2);
-    //   readPoints(pathDataset, &pts_2, dim, offset, round_size); //third round
-    // }
-    block_size = 250;
-    if (token >block_size)
+    token = numPt;
+    offset = 0;
+
+    while (token > 0)
     {
-      round_size =block_size;
-      token -=block_size;
-    }else{
-      round_size = token;
-      token =0;
-    }
-    readPoints(pathDataset, &pts_2, dim, offset, round_size); 
-    offset+=block_size;
-    // for (int i = 0; i < split_size; i+=block_size)
-    // {
-    //   /* code */
-    // }
-    
-    for (int h = 0; h < split_size; h++)
-    {
-      if (bitmap[h])
-        continue;
-      for (int k = 0; k < round_size; k++)
+
+      if (token > block_size)
       {
-        if (pts[h].ID == pts_2[k].ID)
+        round_size = block_size;
+        token -= block_size;
+      }
+      else
+      {
+        round_size = token;
+        token = 0;
+      }
+      readPoints(pathDataset, &pts_2, dim, offset, round_size);
+      offset += block_size;
+
+      for (int h = i; h < i + block_size && h < split_size; h++)
+      {
+        if (bitmap[h])
           continue;
-        int counter = 0;
-        for (int z = 0; z < dim; z++)
+        for (int k = 0; k < round_size; k++)
         {
-          if (pts[h].values[z] >= pts_2[k].values[z])
+          if (pts[h].ID == pts_2[k].ID)
+            continue;
+          int counter = 0;
+          for (int z = 0; z < dim; z++)
           {
-            counter++;
+            if (pts[h].values[z] >= pts_2[k].values[z])
+            {
+              counter++;
+            }
+            else
+              break;
           }
-          else
+          if (counter == dim)
+          {
+            // permissible=0;
+            bitmap[h] = 1;
+            // printf("bitmap[%d] set to 1\n",h);
             break;
-        }
-        if (counter == dim)
-        {
-          // permissible=0;
-          bitmap[h] = 1;
-          // printf("bitmap[%d] set to 1\n",h);
-          break;
+          }
         }
       }
+
+      for (int i = 0; i < round_size; i++)
+      {
+        free(pts_2[i].values);
+      }
+      free(pts_2);
     }
-    for (int i = 0; i < round_size; i++)
-    {
-      free(pts_2[i].values);
-    }
-    
-    free(pts_2);
   }
+  // }
   // for (int i = 0; i < split_size; i++)
   // {
   //   printf("bitmap[%d] = %d\n", i, bitmap[i]);
@@ -185,7 +192,6 @@ int main(int agrc, char *argv[])
   free(pts);
   // printf("freed!");
 
-
   int *gathered_bitmap = NULL;
   if (world_rank == 0)
   {
@@ -195,35 +201,33 @@ int main(int agrc, char *argv[])
 
   int counts[3] = {(numPt + 1) / 3, (numPt + 1) / 3, numPt - ((numPt + 1) / 3 * 2)};
   int disps[3] = {0, counts[0], counts[0] + counts[1]};
-  
+
   MPI_Gatherv(bitmap, split_size, MPI_INT,
               gathered_bitmap, counts, disps, MPI_INT, 0, MPI_COMM_WORLD);
   free(bitmap);
-   
-  if (world_rank ==0)
+
+  if (world_rank == 0)
   {
-    int total_count = counts[0]+counts[1]+counts[2];
-    pPermissiblePoints = malloc(total_count*sizeof(Point)); 
-    for (int i = 0; i < numPt ; i++)
+    int total_count = counts[0] + counts[1] + counts[2];
+    pPermissiblePoints = malloc(total_count * sizeof(Point));
+    for (int i = 0; i < numPt; i++)
     {
       // printf("gathered_bitmap[%d] = %d, ID= %d\n", i, gathered_bitmap[i], i+1);
       if (gathered_bitmap[i] != 1)
       {
-        pPermissiblePoints[permissiblePointNum++].ID = i+1;
+        pPermissiblePoints[permissiblePointNum++].ID = i + 1;
       }
     }
-    printf("final permissiblePointNum = %d\n",permissiblePointNum);
+    printf("final permissiblePointNum = %d\n", permissiblePointNum);
     // for (int i = 0; i < permissiblePointNum; i++)
     // {
     //   printf("ID = %d\n",pPermissiblePoints[i].ID);
     // }
-    
+
     writePermissiblePtToFile(pPermissiblePoints, permissiblePointNum, pathOutput);
     free(pPermissiblePoints);
     free(gathered_bitmap);
   }
-  
-  
 
   MPI_Finalize();
   return 0;
